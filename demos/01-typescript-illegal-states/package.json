@@ -1,0 +1,15 @@
+{
+  "name": "ddd-illegal-states-demo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Beat 3.2 demo — make illegal states unrepresentable",
+  "scripts": {
+    "build": "tsc",
+    "naive": "npm run build && node dist/naive.js",
+    "typecheck:safe": "tsc --noEmit --strict src/safe.ts",
+    "typecheck:bug": "tsc --noEmit --strict src/safe.bug.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

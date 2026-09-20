@@ -1,0 +1,497 @@
+/*
+ * "teychene" reveal.js custom theme — v1
+ * Derived from visual analysis of François Teychene's conference decks.
+ * Evidence base: full pass on "Le design de l'erreur" (Devoxx FR 2021, 130 slides,
+ * Google Slides export) + title-card thumbnails of two 2022 slides.com decks
+ * ("Analytiques temps réel avec Apache Pinot", "Algebraic data types in Java 17").
+ * See ../sources.md for details and gaps. Treat as v1, not final.
+ *
+ * Usage: link this file in place of reveal.js's default theme:
+ *   <link rel="stylesheet" href="theme/teychene-theme.css">
+ * Slide *types* are plain <section> classes — see SKILL.md for the full list
+ * and how to mark up each kind of slide.
+ */
+
+:root {
+  /* Palette */
+  --tey-navy: #0b1a24;
+  --tey-navy-2: #142e3d;
+  --tey-teal: #0f9d8f;
+  --tey-ink: #16181a;
+  --tey-paper: #ffffff;
+  --tey-mist: #f4f6f7;
+
+  /* Punchline/quote accent palette — two families, both checked for contrast
+     (WCAG large-text needs >=3:1; targets below all clear that with margin):
+     "bold" = white text on a saturated color, "light" = dark ink text on a
+     pale one. Rotate across a talk (see SKILL.md) rather than reusing one.
+     Bold: --tey-blue-punch (orig.) and --tey-teal-punch (orig.) are the two
+     confirmed-from-source colors; --tey-violet-punch and --tey-coral-punch
+     are new, picked to match hues already in the atmosphere image pool
+     (violet <- marble-teal-magenta.jpg's magenta swirl, coral <- dock-sunset.jpg's
+     warm sky) rather than invented from nothing.
+     Light: --tey-sky-light / --tey-mint-light are new — genuinely light
+     blue/green as requested, with dark ink text instead of white so they
+     stay legible (contrast ~8-12:1 with --tey-ink). */
+  --tey-blue-punch: #0d6efd; /* contrast vs white text ~4.5:1 */
+  --tey-teal-punch: #0f8a7a; /* contrast vs white text ~4.3:1 */
+  --tey-violet-punch: #6d28d9; /* contrast vs white text ~7.1:1 */
+  --tey-coral-punch: #c2410c; /* contrast vs white text ~5.2:1 */
+  --tey-sky-light: #7dd3fc; /* contrast vs --tey-ink ~10.7:1 */
+  --tey-mint-light: #6ee7b7; /* contrast vs --tey-ink ~11.7:1 */
+  --tey-overlay: linear-gradient(120deg, rgba(6, 16, 22, 0.6), rgba(6, 16, 22, 0.88));
+  /* Lighter than --tey-overlay on purpose — used only by .photo-text, whose
+     photo is the point of the slide, not just a backdrop like title/section
+     dividers. --tey-overlay itself is untouched: title-slide/section-slide/
+     thanks are working and weren't part of what broke, don't risk them. */
+  --tey-overlay-light: linear-gradient(120deg, rgba(6, 16, 22, 0.25), rgba(6, 16, 22, 0.45));
+
+  /* Fonts — signature is monospace for headings/titles/punchlines,
+     a clean sans for running/evidence text, monospace again (naturally) for code. */
+  --r-main-font: -apple-system, "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
+  /* Sized against reveal.js's own default logical canvas (960x700 —
+     template.html doesn't override width/height, deliberately: a prior
+     attempt to customize the canvas + add a CSS max-width for extra lateral
+     margin ended up breaking background-image and control (arrow) sizing,
+     which stayed pinned to 960-ish regardless of the override. Reveal.js's
+     untouched defaults handle canvas scaling correctly on their own,
+     including on 2K/4K screens — don't reintroduce width/height/maxScale
+     overrides without re-testing that background images and controls scale
+     correctly too, not just the slide content). These font values ARE
+     calibrated to the 960-wide canvas — if that canvas width ever changes,
+     rescale these proportionally or text shrinks relative to the slide. */
+  --r-main-font-size: 40px;
+  --r-main-color: var(--tey-ink);
+  --r-background-color: var(--tey-paper);
+
+  --r-heading-font: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --r-heading-color: currentColor;
+  --r-heading-font-weight: 700;
+  --r-heading-line-height: 1.15;
+  --r-heading-letter-spacing: -0.01em;
+  --r-heading-text-transform: none;
+  --r-heading-text-shadow: none;
+  --r-heading1-size: 2.6em;
+  --r-heading2-size: 1.7em;
+  --r-heading3-size: 1.3em;
+
+  --r-code-font: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  --r-link-color: var(--tey-teal);
+  --r-link-color-hover: var(--tey-blue-punch);
+  --r-selection-background-color: var(--tey-teal);
+  --r-selection-color: #fff;
+}
+
+/* Bug fix (found 2026-09-21): this used to strip reveal.js's own default
+   pill background (`background: transparent`) and fall back to a very
+   low-opacity dark-gray number, with a per-slide-type override list to
+   flip it to white on dark backgrounds — except that list didn't cover
+   .quote or .photo, so the number was near-invisible there (same root
+   cause as the .photo .credit legibility bug: arbitrary/dark content
+   behind low-contrast text, no way to enumerate every case safely).
+   Simpler and robust regardless of what's behind it: keep a themed dark
+   pill (reveal.js's own default approach, just restyled), which works on
+   every slide type without a per-class override list to maintain. */
+.reveal .slide-number {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.45);
+  font-family: var(--r-heading-font);
+  font-size: 0.5em;
+  padding: 0.3em 0.5em;
+  border-radius: 3px;
+}
+
+/* ---------- title-slide / section-slide ----------
+   Opening slide and act/section dividers. Full-bleed contextual photo
+   (never invent one — see [IMAGE: ...] convention in SKILL.md), dark
+   overlay for legibility, monospace title, event name bottom-left,
+   brand block (logo + handle) bottom-right. section-slide is the same
+   template without the brand block, for mid-talk act transitions. */
+.reveal .slides section.title-slide,
+.reveal .slides section.section-slide {
+  color: #fff;
+  text-align: left;
+}
+.reveal .slides section.title-slide {
+  /* Breathing room between the h1/.rule/p block and the bottom-anchored
+     .kicker/.brand. Vertical centering here is reveal.js's own JS (not
+     CSS flex — a height:100%+flex attempt fought that centering and was
+     reverted), which centers based on the section's measured height, so
+     padding-bottom makes that measured box taller and shifts the
+     *visible* content up rather than touching .kicker/.brand directly. */
+  padding-bottom: 0.5em;
+}
+.reveal .slide-background.title-slide,
+.reveal .slide-background.section-slide {
+  background-color: var(--tey-navy);
+}
+.reveal .slide-background.title-slide::after,
+.reveal .slide-background.section-slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--tey-overlay);
+}
+.reveal .slides section.title-slide h1,
+.reveal .slides section.section-slide h1,
+.reveal .slides section.section-slide h2 {
+  font-size: var(--r-heading1-size);
+  max-width: 80%;
+}
+/* .title-row — wraps the h1 and a small image (e.g. profile.jpg) so the
+   image sits on the same vertical level as the title text and is pushed
+   to the right edge, instead of just stacking below it in normal flow. */
+.reveal .slides section.title-slide .title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.reveal .slides section.title-slide .title-row img {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.reveal .slides section.title-slide .kicker {
+  position: absolute;
+  left: 0.6em;
+  bottom: 0.6em;
+  font-family: var(--r-heading-font);
+  font-size: 0.4em;
+  opacity: 0.85;
+}
+.reveal .slides section.title-slide .rule {
+  width: 3em;
+  height: 3px;
+  background: var(--tey-teal);
+  margin: 0.4em 0 0.6em;
+}
+.reveal .slides section.title-slide .brand {
+  position: absolute;
+  right: 0.6em;
+  bottom: 0.6em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-family: var(--r-heading-font);
+  font-size: 0.4em;
+  opacity: 0.9;
+}
+.reveal .slides section.title-slide .brand img {
+  height: 1.4em;
+  width: auto;
+}
+
+/* ---------- punchline ----------
+   One crisp, standalone thesis sentence. Flat saturated background,
+   centered, bold monospace, no imagery, no clutter. Rotate across accents
+   rather than reusing one — six available now (see palette comment at the
+   top): accent-blue, accent-teal, accent-violet, accent-coral (bold family,
+   white text) and accent-sky, accent-mint (light family, dark ink text —
+   don't override their text color back to white, it was picked specifically
+   for contrast against a pale background). Don't put the same accent on two
+   punchline slides in a row. */
+.reveal .slides section.punchline {
+  color: #fff;
+  text-align: center;
+}
+.reveal .slide-background.punchline.accent-blue {
+  background-color: var(--tey-blue-punch);
+}
+.reveal .slide-background.punchline.accent-teal {
+  background-color: var(--tey-teal-punch);
+}
+.reveal .slide-background.punchline.accent-violet {
+  background-color: var(--tey-violet-punch);
+}
+.reveal .slide-background.punchline.accent-coral {
+  background-color: var(--tey-coral-punch);
+}
+.reveal .slide-background.punchline.accent-sky {
+  background-color: var(--tey-sky-light);
+}
+.reveal .slide-background.punchline.accent-mint {
+  background-color: var(--tey-mint-light);
+}
+.reveal .slides section.punchline.accent-sky,
+.reveal .slides section.punchline.accent-mint {
+  color: var(--tey-ink);
+}
+.reveal .slides section.punchline h2,
+.reveal .slides section.punchline p {
+  font-family: var(--r-heading-font);
+  font-weight: 700;
+  font-size: 1.6em;
+  max-width: 85%;
+  margin: 0 auto;
+}
+
+/* ---------- quote ----------
+   Borrowed authority or the deadpan-definition bit ("marque de fabrique" —
+   see talk-style skill). Flat background, oversized quote glyph, italic
+   sans body (not monospace — keeps it distinct from punchlines), bold
+   non-italic attribution line. Definition text needs a real citation:
+   put it in the attribution line, not just in the bibliography. */
+.reveal .slides section.quote {
+  color: #fff;
+  text-align: center;
+}
+.reveal .slide-background.quote {
+  background-color: var(--tey-teal-punch);
+}
+.reveal .slides section.quote .glyph {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.5em;
+  line-height: 0.5;
+  opacity: 0.6;
+  display: block;
+  margin-bottom: 0.2em;
+}
+.reveal .slides section.quote p.quote-text {
+  font-family: var(--r-main-font);
+  font-style: italic;
+  font-size: 1em;
+  max-width: 80%;
+  margin: 0 auto 0.6em;
+}
+.reveal .slides section.quote p.attribution {
+  font-family: var(--r-main-font);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 0.55em;
+  opacity: 0.9;
+}
+
+/* ---------- evidence ----------
+   Real screenshots, stack traces, error messages, code, data — never
+   invented placeholder examples. Plain white background so the evidence
+   itself is the focus; a short caption/citation runs underneath. */
+.reveal .slides section.evidence {
+  /* No background-color here on purpose (2026-09-21) — it used to be set
+     directly on the <section>, which structurally blocks any
+     data-background-image behind it, no matter what else you add (this was
+     the actual root cause the first, broken .photo-composability attempt
+     ran into for .evidence specifically). Removing it changes nothing
+     visually today: :root's --r-background-color is already --tey-paper,
+     and reveal.js applies that to any slide-background with nothing more
+     specific set, so plain `class="evidence"` still renders white by
+     default. What it does unblock: a future `class="evidence photo
+     photo-text"` slide can now actually show the photo — same narrow,
+     verified-before-retrofitting approach as .photo-text itself. */
+  color: var(--tey-ink);
+  text-align: left;
+}
+.reveal .slides section.evidence h3 {
+  font-size: var(--r-heading3-size);
+  margin-bottom: 0.4em;
+}
+.reveal .slides section.evidence img,
+.reveal .slides section.evidence pre {
+  max-height: 65vh;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+}
+/* .tla — dedicated to TLA+ code blocks specifically, not code in general
+   (this deck also has TypeScript/Java snippets that shouldn't get this).
+   Add class="tla" to the <code> tag. Highlights whichever line-by-line
+   `\* explanation` fragment is currently active (reveal.js adds
+   .current-fragment to exactly one fragment at a time, removing it again
+   as soon as you advance past it — verified against reveal.js's own
+   source, not assumed). */
+.reveal .slides section.evidence pre code.tla .fragment.current-fragment {
+  color: #ef4444;
+  font-weight: 700;
+}
+/* Not scoped to .evidence specifically (2026-09-21 fix) — .caption is a
+   generic "small, dimmed citation line" style, and citations show up inside
+   .photo-text slides too (e.g. a source note under quoted evidence stated
+   over a photo). Scoping it to `section.evidence .caption` meant it simply
+   didn't apply there — the paragraph rendered as plain body text instead of
+   a citation. `opacity: 0.6` works correctly against either text color
+   (dark ink in .evidence, white in .photo-text) since it dims whatever
+   color it inherits rather than assuming one. */
+.reveal .slides .caption {
+  font-family: var(--r-main-font);
+  font-size: 0.45em;
+  opacity: 0.6;
+  margin-top: 0.4em;
+}
+
+/* ---------- photo ----------
+   A full-bleed evocative photo used as a beat on its own (metaphor,
+   pause, emotional turn) rather than as evidence. Always needs a visible
+   photographer credit, bottom-right, small italic — non-negotiable
+   attribution, matching every photo slide observed in the source decks. */
+.reveal .slides section.photo {
+  color: #fff;
+  /* Bug fix (found 2026-09-21): section.photo has almost no content (just
+     the .credit div), and reveal.js's own base CSS gives slide sections
+     `position: absolute` but NO default height — an empty/sparse section
+     collapses to its content's natural height and gets centered by
+     reveal.js, so .credit's `bottom: 0.6em` was landing near the vertical
+     middle of the slide instead of the actual bottom. height:100% makes
+     the section's box match the real slide, so bottom/right below are
+     relative to the slide edges as intended. */
+  height: 100%;
+}
+.reveal .slides section.photo .credit {
+  position: absolute;
+  right: 0.6em;
+  bottom: 0.6em;
+  font-family: var(--r-main-font);
+  font-style: italic;
+  font-size: 0.55em;
+  opacity: 0.85;
+  /* Halo, not just a drop shadow: stacked shadows in all four diagonal
+     directions plus a soft blur, so the credit stays legible regardless of
+     how bright/busy the photo is directly behind it. */
+  text-shadow:
+    -1px -1px 2px rgba(0, 0, 0, 0.85),
+    1px -1px 2px rgba(0, 0, 0, 0.85),
+    -1px 1px 2px rgba(0, 0, 0, 0.85),
+    1px 1px 2px rgba(0, 0, 0, 0.85),
+    0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- photo-text ----------
+   2026-09-21: added as a scoped, PURELY ADDITIVE class after an earlier,
+   much larger attempt at this (decoupling every content class's background
+   entirely, retrofitting the whole live deck) broke the deck and was fully
+   reverted the same day. This version touches nothing above — .photo,
+   .punchline, .quote, .evidence are byte-for-byte what they were before —
+   it only adds a new class you opt into per-slide.
+   Use: class="photo photo-text" alongside a data-background-image, with
+   your text content wrapped in a `<div class="text">` (not bare h1/h2/h3/p
+   directly in the section — see why below) — a photo slide that carries
+   its own text, not just a beat + credit. Centers that text both
+   vertically and horizontally, dims the image so it stays legible (lighter
+   dim than title-slide/section-slide — see --tey-overlay-light above), and
+   adds a shadow so the text reads regardless of what's behind it.
+   2026-09-21, second pass: the first version put `display:flex` directly
+   on the <section> to center its content. Silently didn't vertically
+   center — this file already has the answer why, in the title-slide
+   comment above: reveal.js's own JS-based centering (the default
+   `center:true`) fights a flex-on-section approach. That lesson wasn't
+   applied here the first time; it is now. Fix: put the centering flex on
+   an inner `.text` wrapper instead, absolutely positioned to fill the
+   section (inset:0) — self-contained, doesn't touch the <section>'s own
+   display/layout at all, so there's nothing for reveal.js's centering
+   logic to fight. .credit stays a direct child of <section>, unaffected
+   either way (it was already using absolute positioning, never depended on
+   flex). */
+.reveal .slide-background.photo-text::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--tey-overlay-light);
+}
+.reveal .slides section.photo-text .text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 2em;
+}
+.reveal .slides section.photo-text .text h1,
+.reveal .slides section.photo-text .text h2,
+.reveal .slides section.photo-text .text h3,
+.reveal .slides section.photo-text .text p {
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+}
+
+/* ---------- bio ----------
+   Two-tone diagonal split: dark panel (communities/socials/past talks)
+   on the left, light panel (headshot, role, tech stack icons) on the
+   right, divided by a ~12deg cut. */
+.reveal .slides section.bio {
+  background: var(--tey-paper);
+  color: var(--tey-ink);
+}
+.reveal .slides section.bio .panel-dark {
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: var(--tey-navy);
+  color: #fff;
+  clip-path: polygon(0 0, 100% 0, 82% 100%, 0% 100%);
+  padding: 1em;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.6em;
+  font-size: 0.45em;
+}
+.reveal .slides section.bio .panel-light {
+  position: absolute;
+  inset: 0;
+  left: 40%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  font-size: 0.45em;
+  text-align: center;
+}
+.reveal .slides section.bio .panel-light img.avatar {
+  width: 5em;
+  height: 5em;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* ---------- thanks ----------
+   Closing slide. Full-bleed evocative photo (same rules as .photo),
+   large thin sans "Thanks"/"Merci", handle block near the bottom. */
+.reveal .slides section.thanks {
+  color: #fff;
+  /* No height:100% here (unlike title-slide/section-slide/photo above) —
+     .handle is normal flow, not position:absolute, so it was never
+     affected by the bug that fix addresses. Adding it anyway would only
+     reintroduce that fix's side effect: it defeats reveal.js's own
+     JS-based vertical centering (which needs an auto-height section to
+     measure against), pushing h1/.handle to the top of the slide instead
+     of staying centered, for no actual benefit here. */
+}
+.reveal .slide-background.thanks::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(6, 16, 22, 0.15), rgba(6, 16, 22, 0.55));
+}
+.reveal .slides section.thanks h1 {
+  font-family: var(--r-main-font);
+  font-weight: 300;
+  font-size: 2em;
+}
+.reveal .slides section.thanks .handle {
+  font-family: var(--r-heading-font);
+  font-size: 0.5em;
+  margin-top: 0.6em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+}
+
+/* ---------- speaker notes ----------
+   Multi-line notes: NOT a CSS concern — `<aside class="notes">` content is
+   hardcoded by reveal.js's own notes plugin to `white-space: normal`
+   regardless of any CSS in this file (confirmed against the plugin's
+   actual unminified source — white-space only ever becomes "pre-wrap" for
+   a completely different mechanism, a `data-notes="..."` attribute on the
+   <section> itself, which this skill doesn't use). For a multi-line note,
+   add `data-markdown` to the aside (the plugin runs it through marked.js
+   when that attribute is present) and mind two things:
+   1. Separate each line with a BLANK line, not just a newline — marked is
+      configured here with `breaks: false`, so a bare newline still
+      collapses to a space; only a paragraph break reliably splits lines.
+   2. Keep the note text flush left, no leading indentation — markdown
+      treats 4+ leading spaces as a code block, so an indented note
+      (matching this file's own HTML nesting) silently renders in a
+      monospace font inside a padded box instead of plain text.
+   Single-line notes need none of this — data-markdown is only necessary
+   once a note actually spans multiple lines. See a generated deck's
+   README.md ("Speaker view / notes") for a copy-pasteable example. */
