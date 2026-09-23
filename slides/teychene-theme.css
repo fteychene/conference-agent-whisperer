@@ -475,6 +475,17 @@
   justify-content: center;
   gap: 0.4em;
 }
+.reveal .slides section.thanks .handle a,
+.reveal .slides section.thanks .handle a:visited {
+  color: #fff;
+  text-decoration: underline;
+}
+.reveal .slides section.thanks .handle .icon-github,
+.reveal .slides section.thanks .handle .icon-linkedin {
+  width: 1em;
+  height: 1em;
+  fill: #fff;
+}
 
 /* ---------- speaker notes ----------
    Multi-line notes: NOT a CSS concern — `<aside class="notes">` content is
