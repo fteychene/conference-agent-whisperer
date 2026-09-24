@@ -125,8 +125,8 @@ So let's rephrase it
         <h2>Open any pitch deck for an AI coding tool</h2>
         <h2>it's the same word management already worshipped: productivity.</h2>
         <div style="margin-bottom: 15px;"></div>
-        <div>Github CoPilot "<span style="font-style: italic;">up to 55% more productive at writing code</span>"</div>
-        <div>Cursor "<span style="font-style: italic;"> make software development 10× more productive</span>"</div>
+        <div class="support">Github CoPilot "<span style="font-style: italic;">up to 55% more productive at writing code</span>"</div>
+        <div class="support">Cursor "<span style="font-style: italic;"> make software development 10× more productive</span>"</div>
         <aside class="notes" data-markdown>Transition: "Look at any pitch deck yourself — it's never phrased any other way."</aside>
       </section>
 
@@ -1061,6 +1061,14 @@ State 5: balance = -2  (p2's debit lands — OVERDRAWN)
       slideNumber: true,
       transition: 'fade',
       plugins: [ RevealNotes ],
+      // 2026-09-24: 1920x1080 (16:9) instead of reveal.js's 960x700 default —
+      // that narrower aspect ratio letterboxes on a real 16:9 projector,
+      // which is what made text look too small at a real presentation.
+      // teychene-theme.css's --r-main-font-size was rescaled to match.
+      // Deliberately isolated to just width/height, nothing else — see
+      // SKILL.md's "Canvas size" note for why that matters here.
+      width: 1920,
+      height: 1080,
     });
   </script>
 </body>
